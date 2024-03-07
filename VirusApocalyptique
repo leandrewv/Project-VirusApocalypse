@@ -1,0 +1,143 @@
+import random
+from tkinter import *
+
+a = int(input("Entrez la largeur de la fenêtre : "))
+b = int(input("Entrez la hauteur de la fenêtre : "))
+p = int(input("Entrez la nombre de ligne : "))
+n = int(input("Entrez la nombre de colones : "))
+
+root = Tk()
+canvas = Canvas(root, width=a, height=b, background="white")
+canvas.pack()
+
+
+
+tableau = [[0 for _ in range(p)] for _ in range(n)]
+cellules_mortes = set()
+jeu_en_cours = True
+cellules_mortes_compte = {}
+cellules_mortes_reussi = set()  # Cellules noires déjà ressuscitées avec succès
+cellules_reussi_chance = set()  # Cellules ayant déjà eu une chance de revenir à l'état rouge avec succès
+
+
+def verif_cellule_proche():
+    global cellules_mortes_compte, cellules_mortes_reussi, cellules_reussi_chance
+
+    new_tableau = [[0 for _ in range(p)] for _ in range(n)]
+    for i in range(n):
+        for j in range(p):
+            cpt = 0
+            for k in [-1, 0, 1]:
+                for h in [-1, 0, 1]:
+                    if k == 0 and h == 0:
+                        continue
+                    nk = (i + k) % n
+                    nh = (j + h) % p
+                    if tableau[nk][nh] == 1:
+                        cpt += 1
+            if tableau[i][j] == 1:
+                if cpt == 2 or cpt == 3:
+                    new_tableau[i][j] = 1
+                else:
+                    if (i, j) in cellules_mortes_compte:
+                        cellules_mortes_compte[(i, j)] += 1
+                    else:
+                        cellules_mortes_compte[(i, j)] = 1
+                    if cellules_mortes_compte[(i, j)] == 1:
+                        new_tableau[i][j] = -1  # Marquer la cellule comme morte
+            elif tableau[i][j] == 0 and cpt == 3:
+                new_tableau[i][j] = 1
+            elif tableau[i][j] == 1:
+                new_tableau[i][j] = 1
+                if (i, j) in cellules_mortes_compte:
+                    del cellules_mortes_compte[(i, j)]
+
+    # Revivez les cellules noires avec une probabilité de 70% après avoir été marquées comme mortes une fois
+    for cellule in list(cellules_mortes_compte.keys()):
+        if cellules_mortes_compte[cellule] == 1 and random.random() < 0.7 and cellule not in cellules_mortes_reussi and cellule not in cellules_reussi_chance:
+            new_tableau[cellule[0]][cellule[1]] = 1
+            cellules_mortes_reussi.add(cellule)  # Ajout à l'ensemble des cellules déjà ressuscitées avec succès
+            del cellules_mortes_compte[cellule]
+            cellules_reussi_chance.add(cellule)
+        else:
+            new_tableau[cellule[0]][cellule[1]] = -1  # Marquer la cellule comme morte
+
+    return new_tableau
+
+
+def create_square_grid():
+    square_size = 15
+    for i in range(n):
+        for j in range(p):
+            x1 = j * square_size
+            y1 = i * square_size
+            x2 = x1 + square_size
+            y2 = y1 + square_size
+
+            if tableau[i][j] == 0:
+                canvas.create_rectangle(x1, y1, x2, y2, outline="black", fill="green")
+            elif tableau[i][j] == 1:
+                canvas.create_rectangle(x1, y1, x2, y2, fill="red")
+            elif tableau[i][j] == -1:  # Nouvelle condition pour dessiner les cellules mortes en noir
+                canvas.create_rectangle(x1, y1, x2, y2, fill="black")
+
+
+def debut_jeu():
+    global jeu_en_cours, cellules_mortes_compte, cellules_mortes_reussi, cellules_reussi_chance
+
+    def base():
+        for i in range(n):
+            for j in range(p):
+                if random.random() < 0.1:
+                    tableau[i][j] = 1
+
+        cellules_mortes_compte = {}
+        cellules_mortes_reussi = set()
+        cellules_reussi_chance = set()
+        create_square_grid()
+
+        def repition_grille():
+            global jeu_en_cours, tableau
+            if jeu_en_cours:
+                tableau = verif_cellule_proche()
+                canvas.delete("all")
+                create_square_grid()
+                if jeu_en_cours:
+                    root.after(500, repition_grille)
+
+        repition_grille()
+
+    jeu_en_cours = True
+    base()
+
+
+def pause_jeu():
+    global jeu_en_cours
+    jeu_en_cours = False
+
+
+def continuer_jeu():
+    global jeu_en_cours
+    jeu_en_cours = True
+    debut_jeu()
+
+
+def stop_jeu():
+    global jeu_en_cours
+    jeu_en_cours = False
+    canvas.delete("all")
+
+
+start_button = Button(root, text="Débuter", bg="blue", command=debut_jeu)
+start_button.pack(side=LEFT)
+
+pause_button = Button(root, text="Pause ", bg="green", command=pause_jeu)
+pause_button.pack(side=LEFT)
+
+resume_button = Button(root, text="Continuer", bg="cyan", command=continuer_jeu)
+resume_button.pack(side=LEFT)
+
+stop_button = Button(root, text="Stop", bg="red", command=stop_jeu)
+stop_button.pack(side=LEFT)
+
+root.mainloop()
