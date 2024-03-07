@@ -123,9 +123,11 @@ def continuer_jeu():
 
 
 def stop_jeu():
-    global jeu_en_cours
-    jeu_en_cours = False
-    canvas.delete("all")
+  global jeu_en_cours, cellules_mortes_compte
+  jeu_en_cours = False
+  cellules_mortes_compte = {}  # Réinitialisation du dictionnaire des cellules mortes
+  canvas.delete("all")
+
 
 
 start_button = Button(root, text="Débuter", bg="blue", command=debut_jeu)
