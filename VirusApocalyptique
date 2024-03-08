@@ -126,6 +126,9 @@ def stop_jeu():
   global jeu_en_cours, cellules_mortes_compte
   jeu_en_cours = False
   cellules_mortes_compte = {}  # Réinitialisation du dictionnaire des cellules mortes
+  cellules_reussi_chance = set()
+  cellules_mortes_reussi = set()
+  cellules_reussi_chance = set()
   canvas.delete("all")
 
 
